@@ -40,6 +40,36 @@ if (isset($_GET["src"])) {
 	}
 	//var_dump($route);
 	
+	require("db.php");
+	$conn = new mysqli($db_server, $db_user, $db_password, $db_db);
+	if ($conn->connect_error) {
+		die("<p style='color:red;'>Connection failed: " . $conn->connect_error."</p>");
+	}	
+
+	// reset table
+	$sql = "DELETE FROM route";
+
+	if ($conn->query($sql) === TRUE) {
+		echo "<p>Successfully Reset Route Table.</p>";
+		$ts = mktime(00, 00, 00, 12, 25, date("Y"));
+		echo "<p>Assigning Time Stamps for ".date("Y", $ts)."</p>";
+		echo "<p>Liftoff @ ".date("Y-m-d h:i:sa", $ts)."</p>";
+		foreach($route as $node) {
+			$sql = "INSERT INTO route (x, y, time) VALUES (".$node[0].", ".$node[1].", '".date("Y-m-d H:i:s", $ts)."')";
+			if ($conn->query($sql) === TRUE) {
+				
+			} else {
+				echo "<p style='color:red;'>Error creating record: " . $conn->error."</p>";
+			}
+			$ts = strtotime("+".$timePerStop." seconds", $ts);
+		}
+	
+		$ts = strtotime("-".$timePerStop." seconds", $ts);
+		echo "<p>Final Stop @ ".date("Y-m-d h:i:sa", $ts)."</p>";
+	} else {
+		echo "<p style='color:red;'>Error deleting record: " . $conn->error."</p>";
+	}
+	$conn->close();
 	echo "<p>Done! <a href='./SantaRouter.php'>Change Source?</a></p>";
 } else {
 	echo "<p>Select a file below to continue.</p>";
