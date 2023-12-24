@@ -1,7 +1,7 @@
 <?php
 echo "<h1>SantaRouter</h1><hr>";
-$startx = 90;
-$starty = 0;
+$startx = 64.963051;//90;
+$starty = -19.020835;//0;
 if (isset($_GET["src"])) {
 	$handle = fopen($_GET["src"], "r");
 	$contents = fread($handle, filesize($_GET["src"]));
