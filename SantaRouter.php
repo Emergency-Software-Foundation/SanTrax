@@ -11,7 +11,7 @@ if (isset($_GET["src"])) {
 	$rows = explode("\n", $contents);
 	$nodes = array();
 	foreach($rows as $row) {
-		if (!empty($row)) {
+		if (!empty($row) && !startsWith($row, "#")) {
 			$node = explode(",", $row);
 			$nodes[] = array(floatval($node[0]),floatval($node[1]));
 		}
@@ -55,7 +55,7 @@ if (isset($_GET["src"])) {
 		echo "<p>Assigning Time Stamps for ".date("Y", $ts)."</p>";
 		echo "<p>Liftoff @ ".date("Y-m-d h:i:sa", $ts)."</p>";
 		foreach($route as $node) {
-			$sql = "INSERT INTO route (x, y, time) VALUES (".$node[0].", ".$node[1].", '".date("Y-m-d H:i:s", $ts)."')";
+			$sql = "INSERT INTO route (x, y, time, dwell) VALUES (".$node[0].", ".$node[1].", '".date("Y-m-d H:i:s", $ts)."', ".$timePerStop.")";
 			if ($conn->query($sql) === TRUE) {
 				
 			} else {
@@ -89,5 +89,9 @@ function endsWith( $haystack, $needle=".csv" ) {
         return true;
     }
     return substr( $haystack, -$length ) === $needle;
+}
+function startsWith( $haystack, $needle ) {
+     $length = strlen( $needle );
+     return substr( $haystack, 0, $length ) === $needle;
 }
 ?>
