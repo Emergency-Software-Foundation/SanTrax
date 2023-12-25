@@ -3,6 +3,7 @@
 <script src="./libraries/bootstrap-3.4.1-dist/js/bootstrap.min.js"></script>
 <link rel='stylesheet' href='./libraries/leaflet/leaflet.css'/>
 <script src='./libraries/leaflet/leaflet.js'></script>
+<script src="./libraries/leaflet.motion.min.js"></script>
 <div>
 	<div style='height: 100%' class='col-sm-9' id='map'></div>
 	<div style='height: 100%' class='col-sm-3'>
@@ -37,16 +38,62 @@
 		$out = "";
 		if ($result->num_rows > 0) {
 			while($row = $result->fetch_assoc()) {
-				//echo "L.marker([".$row["x"].", ".$row["y"]."]).addTo(markerGroup);";
 				$out .= "[".$row["x"].", ".$row["y"]."],";
 			}
 		}
+		$last = "[0,0]";
+		$next = "[0,0]";
+		$dwell = 4;
+		$sql = "SELECT * FROM route WHERE time < CURRENT_TIMESTAMP ORDER BY time DESC LIMIT 1";
+		$result = $conn->query($sql);
+		if ($result->num_rows > 0) {
+			while($row = $result->fetch_assoc()) {
+				$last = "[".$row["x"].", ".$row["y"]."]";
+			}
+			$sql = "SELECT * FROM route WHERE time > CURRENT_TIMESTAMP ORDER BY time ASC LIMIT 1";
+			$result = $conn->query($sql);
+			if ($result->num_rows > 0) {
+				while($row = $result->fetch_assoc()) {
+					$next = "[".$row["x"].", ".$row["y"]."]";
+					$dwell = $row["dwell"];
+				}
+			}
+		}
 		echo "	var latlngs = [".$out."];";
+		if (isset($_GET["cTime"])) {
+			echo "	var curPath = [".$out."];";
+			echo "	var dwell = 14400;";
+		} else {
+			echo "	var curPath = [".$last.",".$next."];";
+			echo "	var last = ".$next.";";
+			echo "	var queue = ".$next.";";
+			echo "	var dwell = ".$dwell.";";
+		}
+		if (isset($_GET["debug"])) { echo "var polyline = L.polyline(latlngs, {color: 'red'}).addTo(mymap);"; }
+		
 		$conn->close();
 	?>
-
-	var polyline = L.polyline(latlngs, {color: 'red'}).addTo(mymap);
-
+	L.motion.polyline(curPath,  {color: "transparent"}, {auto: true,duration: (dwell*1000),easing: L.Motion.Ease.linear}, {removeOnEnd: true,showMarker: true,icon: L.icon({
+		iconUrl: './assets/img/santa.png',
+		iconSize: [30, 30],
+		iconAnchor: [15, 15]
+	})}).addTo(mymap);
+	var polyline = L.polyline(latlngs, {color: 'transparent'}).addTo(mymap);
 	// zoom the map to the polyline
 	mymap.fitBounds(polyline.getBounds());
+	setTimeout(nextPoint, dwell*1000);
+	function nextPoint() {
+		L.motion.polyline([last,queue],  {color: "transparent"}, {auto: true,duration: (dwell*1000),easing: L.Motion.Ease.linear}, {removeOnEnd: true,showMarker: true,icon: L.icon({
+			iconUrl: './assets/img/santa.png',
+			iconSize: [30, 30],
+			iconAnchor: [15, 15]
+		})}).addTo(mymap);
+		last = queue;
+		setTimeout(nextPoint, dwell*1000);
+		fetch("./getNext.php").then(x => x.text()).then((txt) => {
+			let data = JSON.parse(txt);
+			dwell = data["dwell"];
+			queue = data["next"];
+		});
+	}
 </script>
