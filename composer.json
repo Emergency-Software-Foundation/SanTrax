@@ -1,6 +1,0 @@
-{
-    "require": {
-        "php": "^8.1.0",
-        "tochka-developers/geo-timezone": "^0.2.1"
-    }
-}
