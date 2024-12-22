@@ -81,6 +81,7 @@ if (isset($_GET["src"])) {
 	}
 	echo "</ul>";
 }
+echo "<hr><i>SanTrax 2024 Edition | ".$_SERVER['SERVER_SOFTWARE']." Server at ".$_SERVER['HTTP_HOST']." Port ".$_SERVER['SERVER_PORT']."</i>";
 
 //Polyfill
 function endsWith( $haystack, $needle=".csv" ) {
