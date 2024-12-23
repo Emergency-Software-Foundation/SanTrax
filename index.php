@@ -44,25 +44,27 @@
 		$last = "[0,0]";
 		$next = "[0,0]";
 		$dwell = 4;
-		$sql = "SELECT * FROM route WHERE time < CURRENT_TIMESTAMP ORDER BY time DESC LIMIT 1";
+		$sql = "SELECT * FROM route WHERE time < UTC_TIMESTAMP ORDER BY time DESC LIMIT 1";
 		$result = $conn->query($sql);
 		if ($result->num_rows > 0) {
 			while($row = $result->fetch_assoc()) {
 				$last = "[".$row["x"].", ".$row["y"]."]";
 			}
-			$sql = "SELECT * FROM route WHERE time > CURRENT_TIMESTAMP ORDER BY time ASC LIMIT 1";
+			$sql = "SELECT * FROM route WHERE time > UTC_TIMESTAMP ORDER BY time ASC LIMIT 1";
 			$result = $conn->query($sql);
 			if ($result->num_rows > 0) {
 				while($row = $result->fetch_assoc()) {
 					$next = "[".$row["x"].", ".$row["y"]."]";
 					$dwell = $row["dwell"];
 				}
+			} else {
+				$next = $last;
 			}
 		}
 		echo "	var latlngs = [".$out."];";
 		if (isset($_GET["cTime"])) {
 			echo "	var curPath = [".$out."];";
-			echo "	var dwell = 14400;";
+			echo "	var dwell = 5;";
 		} else {
 			echo "	var curPath = [".$last.",".$next."];";
 			echo "	var last = ".$next.";";
