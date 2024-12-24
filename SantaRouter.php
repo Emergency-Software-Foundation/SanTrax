@@ -137,7 +137,7 @@ if (isset($_GET["src"])) {
 					}
 					echo "<br>Time per stop: ".$timePerStop;
 					if (!$liftoff) {
-						$sql = "INSERT INTO route (x, y, time, dwell) VALUES (".$startx.", ".$starty.", '".date('Y-m-d H:i:s.u', $ts)."', ".$timePerStop.")";
+						$sql = "INSERT INTO route (x, y, time, dwell) VALUES (".$startx.", ".$starty.", '".convertMicrotimestampToSQL($ts)."', ".$timePerStop.")";
 						if ($conn->query($sql) === TRUE) {
 							echo "<br>Liftoff @ ".date("Y-m-d h:i:sa T", floor($ts));
 						} else {
@@ -148,7 +148,7 @@ if (isset($_GET["src"])) {
 					}
 					$first = true;
 					foreach($zone as $node) {
-						$sql = "INSERT INTO route (x, y, time, dwell) VALUES (".$node[0].", ".$node[1].", '".date('Y-m-d H:i:s.u', $ts)."', ".$timePerStop.")";
+						$sql = "INSERT INTO route (x, y, time, dwell) VALUES (".$node[0].", ".$node[1].", '".convertMicrotimestampToSQL($ts)."', ".$timePerStop.")";
 						if ($conn->query($sql) === TRUE) {
 							if ($first) {
 								echo "<br>First Stop @ ".date("Y-m-d h:i:sa T", floor($ts));
@@ -166,7 +166,7 @@ if (isset($_GET["src"])) {
 					$end=date("Y-m-d H:00:00",floor($ts+3600));
 					$secondsleft = floor(strtotime($end) - $ts);
 					if ($secondsleft > 300 && $secondsleft < 3599) { //limit early arrival to no more than 5 minutes (ie. santa will not arrive before 11:55pm
-						$sql = "INSERT INTO route (x, y, time, dwell) VALUES (".$startx.", ".$starty.", '".date('Y-m-d H:i:s.u', $ts)."', ".$secondsleft.")";
+						$sql = "INSERT INTO route (x, y, time, dwell) VALUES (".$startx.", ".$starty.", '".convertMicrotimestampToSQL($ts)."', ".$secondsleft.")";
 						if ($conn->query($sql) === TRUE) {
 							echo "<p>Returning to start @ ".date("Y-m-d h:i:sa T", floor($ts))." for ".$secondsleft." seconds.</p>";
 						} else {
@@ -176,7 +176,7 @@ if (isset($_GET["src"])) {
 					}
 				} else {
 					if ($liftoff) {
-						$sql = "INSERT INTO route (x, y, time, dwell) VALUES (".$startx.", ".$starty.", '".date('Y-m-d H:i:s.u', $ts)."', 3600)";
+						$sql = "INSERT INTO route (x, y, time, dwell) VALUES (".$startx.", ".$starty.", '".convertMicrotimestampToSQL($ts)."', 3600)";
 						if ($conn->query($sql) === TRUE) {
 						} else {
 							echo "<p style='color:red;'>Error creating record: " . $conn->error."</p>";
@@ -188,14 +188,14 @@ if (isset($_GET["src"])) {
 					$ts = $ts+3600;
 				}
 			}
-			$sql = "INSERT INTO route (x, y, time, dwell) VALUES (".$startx.", ".$starty.", '".date('Y-m-d H:i:s.u', $ts)."', 3600)";
+			$sql = "INSERT INTO route (x, y, time, dwell) VALUES (".$startx.", ".$starty.", '".convertMicrotimestampToSQL($ts)."', 3600)";
 			if ($conn->query($sql) === TRUE) {
 				echo "<p>Returning to start @ ".date("Y-m-d h:i:sa T", floor($ts))."</p>";
 			} else {
 				echo "<p style='color:red;'>Error creating record: " . $conn->error."</p>";
 			}
 			$ts = $ts+3600;
-			$sql = "INSERT INTO route (x, y, time, dwell) VALUES (".$startx.", ".$starty.", '".date('Y-m-d H:i:s.u', $ts)."', 0)";
+			$sql = "INSERT INTO route (x, y, time, dwell) VALUES (".$startx.", ".$starty.", '".convertMicrotimestampToSQL($ts)."', 0)";
 			if ($conn->query($sql) === TRUE) {
 			} else {
 				echo "<p style='color:red;'>Error creating record: " . $conn->error."</p>";
@@ -231,6 +231,17 @@ function get_timezone($latitude, $longitude) {
 	$decode = json_decode($resp, true);
 	$tz = $decode["rawoffset"];
 	return $tz;
+}
+
+function convertMicrotimestampToSQL($ts) {
+	$formats = ['U.u', 'U'];
+	$dateObj = date_create_immutable_from_format('U',time());
+	foreach ($formats as $format) {
+		if ($dateObj = date_create_immutable_from_format($format,$ts)){
+			break;   
+		}
+	}
+	return date_format($dateObj,'Y-m-d H:i:s.u');
 }
 
 //Polyfill
