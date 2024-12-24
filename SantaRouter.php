@@ -47,7 +47,8 @@ if (isset($_GET["src"])) {
 			}
 	}
 	$numZones = 1+(($firstZone+14)-($lastZone+14));
-	$maximumTimePerStop = floor(60/((sizeof($nodes)+1)/($numZones*60)));
+	//$maximumTimePerStop = floor(60/((sizeof($nodes)+1)/($numZones*60)));
+	$maximumTimePerStop = 60/((sizeof($nodes)+1)/($numZones*60));
 	echo "<p>Loaded ".sizeof($nodes)." points, and tagged ".$untaggedcount." across ".$numZones." timezones.</p>";
 	echo "<p>Maximum Time per stop: ".$maximumTimePerStop."s.</p>";
 	
@@ -124,76 +125,77 @@ if (isset($_GET["src"])) {
 					echo "<p>Proccessing route for zone ".$z;
 					echo "<br>Number of stops: ".sizeof($zone);
 					$bonusStop = ($liftoff)? 0:1;
-					$end=date("Y-m-d H:00:00",strtotime("+1 hour", $ts));
-					$secondsleft = (strtotime($end) - $ts);
+					$end=date("Y-m-d H:00:00",floor($ts+3600));
+					$secondsleft = floor(strtotime($end) - $ts);
 					if ($secondsleft > 3599) {
 						$secondsleft = 0;
 					}
-					$timePerStop = floor((3600+$secondsleft)/(sizeof($zone)+$bonusStop));
-					if ($timePerStop > $maximumTimePerStop) {
-						$timePerStop = $maximumTimePerStop;
+					//$timePerStop = floor((3600+$secondsleft)/(sizeof($zone)+$bonusStop));
+					$timePerStop = (3600+$secondsleft)/(sizeof($zone)+$bonusStop);
+					if ($timePerStop > ($maximumTimePerStop*4)) {
+						$timePerStop = ($maximumTimePerStop*4);
 					}
 					echo "<br>Time per stop: ".$timePerStop;
 					if (!$liftoff) {
-						$sql = "INSERT INTO route (x, y, time, dwell) VALUES (".$startx.", ".$starty.", '".date("Y-m-d H:i:s", $ts)."', ".$timePerStop.")";
+						$sql = "INSERT INTO route (x, y, time, dwell) VALUES (".$startx.", ".$starty.", '".date('Y-m-d H:i:s.u', $ts)."', ".$timePerStop.")";
 						if ($conn->query($sql) === TRUE) {
-							echo "<br>Liftoff @ ".date("Y-m-d h:i:sa T", $ts);
+							echo "<br>Liftoff @ ".date("Y-m-d h:i:sa T", floor($ts));
 						} else {
 							echo "<p style='color:red;'>Error creating record: " . $conn->error."</p>";
 						}
-						$ts = strtotime("+".$timePerStop." seconds", $ts);
+						$ts = $ts+$timePerStop;
 						$liftoff = true;
 					}
 					$first = true;
 					foreach($zone as $node) {
-						$sql = "INSERT INTO route (x, y, time, dwell) VALUES (".$node[0].", ".$node[1].", '".date("Y-m-d H:i:s T", $ts)."', ".$timePerStop.")";
+						$sql = "INSERT INTO route (x, y, time, dwell) VALUES (".$node[0].", ".$node[1].", '".date('Y-m-d H:i:s.u', $ts)."', ".$timePerStop.")";
 						if ($conn->query($sql) === TRUE) {
 							if ($first) {
-								echo "<br>First Stop @ ".date("Y-m-d h:i:sa T", $ts);
+								echo "<br>First Stop @ ".date("Y-m-d h:i:sa T", floor($ts));
 								$first = false;
 							}
 						} else {
 							echo "<p style='color:red;'>Error creating record: " . $conn->error."</p>";
 						}
-						$ts = strtotime("+".$timePerStop." seconds", $ts);
+						$ts = $ts+$timePerStop;
 					}
-					$ts = strtotime("-".$timePerStop." seconds", $ts);
-					echo "<br>Final Stop @ ".date("Y-m-d h:i:sa T", $ts);
-					$ts = strtotime("+".$timePerStop." seconds", $ts);
+					$ts = $ts-$timePerStop;
+					echo "<br>Final Stop @ ".date("Y-m-d h:i:sa T", floor($ts));
+					$ts = $ts+$timePerStop;
 					echo "</p>";
-					$end=date("Y-m-d H:00:00",strtotime("+1 hour", $ts));
-					$secondsleft = (strtotime($end) - $ts);
+					$end=date("Y-m-d H:00:00",floor($ts+3600));
+					$secondsleft = floor(strtotime($end) - $ts);
 					if ($secondsleft > 300 && $secondsleft < 3599) { //limit early arrival to no more than 5 minutes (ie. santa will not arrive before 11:55pm
-						$sql = "INSERT INTO route (x, y, time, dwell) VALUES (".$startx.", ".$starty.", '".date("Y-m-d H:i:s T", $ts)."', ".$secondsleft.")";
+						$sql = "INSERT INTO route (x, y, time, dwell) VALUES (".$startx.", ".$starty.", '".date('Y-m-d H:i:s.u', $ts)."', ".$secondsleft.")";
 						if ($conn->query($sql) === TRUE) {
-							echo "<p>Returning to start @ ".date("Y-m-d h:i:sa T", $ts)." for ".$secondsleft." seconds.</p>";
+							echo "<p>Returning to start @ ".date("Y-m-d h:i:sa T", floor($ts))." for ".$secondsleft." seconds.</p>";
 						} else {
 							echo "<p style='color:red;'>Error creating record: " . $conn->error."</p>";
 						}
-						$ts = strtotime("+".$secondsleft." seconds", $ts);
+						$ts = $ts+$secondsleft;
 					}
 				} else {
 					if ($liftoff) {
-						$sql = "INSERT INTO route (x, y, time, dwell) VALUES (".$startx.", ".$starty.", '".date("Y-m-d H:i:s T", $ts)."', 3600)";
+						$sql = "INSERT INTO route (x, y, time, dwell) VALUES (".$startx.", ".$starty.", '".date('Y-m-d H:i:s.u', $ts)."', 3600)";
 						if ($conn->query($sql) === TRUE) {
 						} else {
 							echo "<p style='color:red;'>Error creating record: " . $conn->error."</p>";
 						}
-						echo "<p>No route stops in zone ".$z."; Returning to start @ ".date("Y-m-d h:i:sa T", $ts)."</p>";
+						echo "<p>No route stops in zone ".$z."; Returning to start @ ".date("Y-m-d h:i:sa T", floor($ts))."</p>";
 					} else {
 						echo "<p>No route stops in zone ".$z."</p>";
 					}
-					$ts = strtotime("+1 hour", $ts);
+					$ts = $ts+3600;
 				}
 			}
-			$sql = "INSERT INTO route (x, y, time, dwell) VALUES (".$startx.", ".$starty.", '".date("Y-m-d H:i:s T", $ts)."', 3600)";
+			$sql = "INSERT INTO route (x, y, time, dwell) VALUES (".$startx.", ".$starty.", '".date('Y-m-d H:i:s.u', $ts)."', 3600)";
 			if ($conn->query($sql) === TRUE) {
-				echo "<p>Returning to start @ ".date("Y-m-d h:i:sa T", $ts)."</p>";
+				echo "<p>Returning to start @ ".date("Y-m-d h:i:sa T", floor($ts))."</p>";
 			} else {
 				echo "<p style='color:red;'>Error creating record: " . $conn->error."</p>";
 			}
-			$ts = strtotime("+1 hour", $ts);
-			$sql = "INSERT INTO route (x, y, time, dwell) VALUES (".$startx.", ".$starty.", '".date("Y-m-d H:i:s T", $ts)."', 0)";
+			$ts = $ts+3600;
+			$sql = "INSERT INTO route (x, y, time, dwell) VALUES (".$startx.", ".$starty.", '".date('Y-m-d H:i:s.u', $ts)."', 0)";
 			if ($conn->query($sql) === TRUE) {
 			} else {
 				echo "<p style='color:red;'>Error creating record: " . $conn->error."</p>";

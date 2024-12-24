@@ -44,13 +44,13 @@
 		$last = "[0,0]";
 		$next = "[0,0]";
 		$dwell = 4;
-		$sql = "SELECT * FROM route WHERE time < UTC_TIMESTAMP ORDER BY time DESC LIMIT 1";
+		$sql = "SELECT * FROM route WHERE time < UTC_TIMESTAMP(6) ORDER BY time DESC LIMIT 1";
 		$result = $conn->query($sql);
 		if ($result->num_rows > 0) {
 			while($row = $result->fetch_assoc()) {
 				$last = "[".$row["x"].", ".$row["y"]."]";
 			}
-			$sql = "SELECT * FROM route WHERE time > UTC_TIMESTAMP ORDER BY time ASC LIMIT 1";
+			$sql = "SELECT * FROM route WHERE time > UTC_TIMESTAMP(6) ORDER BY time ASC LIMIT 1";
 			$result = $conn->query($sql);
 			if ($result->num_rows > 0) {
 				while($row = $result->fetch_assoc()) {
