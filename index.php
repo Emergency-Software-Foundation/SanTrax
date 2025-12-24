@@ -94,7 +94,7 @@
 		})}).addTo(mymap);
 		last = queue;
 		setTimeout(nextPoint, dwell*1000);
-		fetch("./getNext.php").then(x => x.text()).then((txt) => {
+		fetch("./getNext.php?t="+Date.now()).then(x => x.text()).then((txt) => {
 			let data = JSON.parse(txt);
 			dwell = data["dwell"];
 			queue = data["next"];
