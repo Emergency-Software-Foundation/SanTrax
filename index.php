@@ -1,11 +1,39 @@
-<link rel="stylesheet" href="./libraries/bootstrap-3.4.1-dist/css/bootstrap.min.css">
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<script src="./libraries/bootstrap-3.4.1-dist/js/bootstrap.min.js"></script>
-<link rel='stylesheet' href='./libraries/leaflet/leaflet.css'/>
-<script src='./libraries/leaflet/leaflet.js'></script>
-<script src="./libraries/leaflet.motion.min.js"></script>
+<head>
+	<link rel="stylesheet" href="./libraries/bootstrap-3.4.1-dist/css/bootstrap.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	<script src="./libraries/bootstrap-3.4.1-dist/js/bootstrap.min.js"></script>
+	<link rel='stylesheet' href='./libraries/leaflet/leaflet.css'/>
+	<script src='./libraries/leaflet/leaflet.js'></script>
+	<script src="./libraries/leaflet.motion.min.js"></script>
+	<meta charset="UTF-8" />
+	<title>SanTrax | Emergency Software Foundation</title>
+	<style>
+		#countdown-box {
+		  position: relative;
+		  width: 40%;
+		  height: 20%;
+		  border: 5px solid grey;
+		  text-align: center;
+		  font-family: sans-serif;
+		  background: white;
+		  z-index: 999999;
+		  left: 30%;
+		  top: 40%;
+		}
+		#time {
+		  font-size: 1.2em;
+		  margin-top: 10px;
+		  font-weight: bold;
+		}
+	</style>
+</head>
 <div>
-	<div style='height: 100%' class='col-sm-9' id='map'></div>
+	<div style='height: 100%' class='col-sm-9' id='map'>
+		<div id="countdown-box">
+			<h3>Countdown to Take-off</h3>
+			<div id="time">Loading…</div>
+		</div>
+	</div>
 	<div style='height: 100%' class='col-sm-3'>
 		<div style='height:80%;'>
 			<center>
@@ -142,4 +170,50 @@
 		  .map(ch => "<span style='outline: 1px solid black;'>"+ch+"</span>")
 		  .join("");
 	}
+	(function () {
+		const box = document.getElementById("countdown-box");
+		const timeEl = document.getElementById("time");
+
+		function getTargetDateUTC() {
+			const now = new Date();
+			const year = now.getUTCFullYear();
+
+			// Dec 24, 10:00 UTC (5:00 AM EST)
+			let target = new Date(Date.UTC(year, 11, 24, 10, 0, 0));
+
+			// If we've already passed it this year, hide immediately
+			if (now >= target) {
+				box.style.display = "none";
+				return null;
+			}
+
+			return target;
+		}
+
+		const targetDate = getTargetDateUTC();
+		if (!targetDate) return;
+
+		function updateCountdown() {
+			const now = new Date();
+			const diff = targetDate - now;
+
+			if (diff <= 0) {
+				box.style.display = "none";
+				clearInterval(timer);
+				return;
+			}
+
+			const totalSeconds = Math.floor(diff / 1000);
+			const days = Math.floor(totalSeconds / 86400);
+			const hours = Math.floor((totalSeconds % 86400) / 3600);
+			const minutes = Math.floor((totalSeconds % 3600) / 60);
+			const seconds = totalSeconds % 60;
+
+			timeEl.innerHTML =
+				"<h4>T- "+days+"d "+hours+"h "+minutes+"m "+seconds+"s</h4>";
+		}
+
+		updateCountdown();
+		const timer = setInterval(updateCountdown, 1000);
+	})();
 </script>
