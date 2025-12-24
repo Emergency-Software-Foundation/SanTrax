@@ -7,10 +7,7 @@ $sql = "SELECT * FROM route WHERE time > UTC_TIMESTAMP(6) ORDER BY time ASC LIMI
 $result = $conn->query($sql);
 if ($result->num_rows > 0) {
 	while($row = $result->fetch_assoc()) {
-		echo "{
-			\"dwell\":".$row["dwell"].",
-			\"next\": [".$row["x"].",".$row["y"]."]
-		}";
+		echo "{\"dwell\":".$row["dwell"].",\"next\": [".$row["x"].",".$row["y"]."]}";
 	}
 }
 $conn->close();
