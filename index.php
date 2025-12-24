@@ -11,7 +11,7 @@
 		#countdown-box {
 		  position: relative;
 		  width: 40%;
-		  height: 20%;
+		  max-height: 20%;
 		  border: 5px solid grey;
 		  text-align: center;
 		  font-family: sans-serif;
@@ -25,6 +25,61 @@
 		  margin-top: 10px;
 		  font-weight: bold;
 		}
+		
+		.play-btn {
+		  width: 48px;
+		  height: 48px;
+		  background: none;
+		  border: none;
+		  cursor: pointer;
+		  position: relative;
+		}
+		.play-btn::before {
+		  content: "";
+		  position: absolute;
+		  top: 50%;
+		  left: 50%;
+		  transform: translate(-40%, -50%);
+		  width: 0;
+		  height: 0;
+		  border-top: 12px solid transparent;
+		  border-bottom: 12px solid transparent;
+		  border-left: 18px solid #000;
+		}
+		.play-btn.playing::before {
+		  content: "";
+		  width: 18px;
+		  height: 18px;
+		  background: #000;
+		  border: none;
+		  transform: translate(-50%, -50%);
+		}
+		.play-btn.playing::after {
+		  display: none;
+		}
+		.play-btn:hover {
+		  opacity: 0.85;
+		}
+		#now-playing-container {
+		  width: 100%;
+		  overflow: hidden;
+		  white-space: nowrap;
+		  position: relative;
+		}
+		#now-playing {
+		  display: inline-block;
+		}
+		#now-playing.scrolling {
+		  animation: scroll-text 12s linear infinite;
+		}
+		@keyframes scroll-text {
+		  from {
+			transform: translateX(0%);
+		  }
+		  to {
+			transform: translateX(-100%);
+		  }
+		}
 	</style>
 </head>
 <div>
@@ -34,7 +89,7 @@
 			<div id="time">Loading…</div>
 		</div>
 	</div>
-	<div style='height: 100%' class='col-sm-3'>
+	<div style='height: 100%; background: white;' class='col-sm-3'>
 		<div style='height:80%;'>
 			<center>
 				<h1>SanTrax</h1><h3>Santa Tracking System</h3><br>
@@ -46,6 +101,25 @@
 						<span style='outline: 1px solid black;'>0</span><span style='outline: 1px solid black;'>0</span><span style='outline: 1px solid black;'>0</span><span style='outline: 1px solid black;'>0</span><span style='outline: 1px solid black;'>0</span><span style='outline: 1px solid black;'>0</span>
 					</span> MPH</h3><br/>
 				</center>
+			</div>
+			<br/>
+			<div id="music-player" style="outline: 1px solid black;">
+				<center>
+					<h4><u>North Pole Radio</u></h4>
+				</center>
+				<div style="width:100%;display:inline-block;">
+					<div style="width:25%;display:inline-block;">
+						<button id="music-toggle" class="play-btn" aria-label="Play music"></button>
+					</div>
+					<div style="width:70%;text-align:center;display:inline-block;">
+						<div style="margin-top:8px; background:#ccc; height:6px; width:100%;">
+							<div id="music-progress" style="background:grey; height:6px; width:0%;"></div>
+						</div>
+						<div id="now-playing-container">
+							<span id="now-playing">-</span>
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 		<div style='max-height: 5%; width:100%; bottom: 0;'>
@@ -216,4 +290,132 @@
 		updateCountdown();
 		const timer = setInterval(updateCountdown, 1000);
 	})();
+	const SONG_URLS = [
+		"./assets/audio/deckhalls.mp3",
+		"./assets/audio/jinglebells.mp3",
+		"./assets/audio/merrychristmas.mp3"
+	];
+	const nowPlayingLookup = {
+		"deckhalls.mp3" : "Deck The Halls",
+		"jinglebells.mp3" : "Jingle Bells",
+		"merrychristmas.mp3" : "We Wish You A Merry Christmas",
+	}
+	let audio = new Audio();
+	audio.preload = "auto";
+
+	let playlist = [];
+	let currentIndex = 0;
+	let hasStarted = false;
+	let isPlaying = false;
+	
+	function shuffle(array) {
+		const a = array.slice();
+		for (let i = a.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[a[i], a[j]] = [a[j], a[i]];
+		}
+		return a;
+	}
+
+	function buildNewPlaylist() {
+		playlist = shuffle(SONG_URLS);
+		currentIndex = 0;
+	}
+
+	function playCurrentSong() {
+		if (!playlist.length) buildNewPlaylist();
+
+		audio.src = playlist[currentIndex];
+		audio.play();
+		isPlaying = true;
+		updateButton();
+		updateNowPlaying();
+	}
+	
+	function startBackgroundMusic() {
+		if (!playlist.length) buildNewPlaylist();
+
+		if (!isPlaying) {
+			playCurrentSong();
+		}
+		
+		hasStarted = true;
+	}
+	
+	function toggleBackgroundMusic() {
+		if (!hasStarted) {
+			startBackgroundMusic();
+		} else if (!isPlaying) {
+			audio.play();
+			isPlaying = true;
+			updateButton();
+		} else {
+			audio.pause();
+			isPlaying = false;
+			updateButton();
+		}
+	}
+	
+	audio.addEventListener("ended", () => {
+		currentIndex++;
+
+		// Restart with a new shuffle when exhausted
+		if (currentIndex >= playlist.length) {
+			buildNewPlaylist();
+		}
+
+		playCurrentSong();
+	});
+	
+	audio.addEventListener("timeupdate", () => {
+		const progress = document.getElementById("music-progress");
+		if (!audio.duration) return;
+
+		const percent = (audio.currentTime / audio.duration) * 100;
+		progress.style.width = percent + "%";
+	});
+	
+	const toggleBtn = document.getElementById("music-toggle");
+
+	function updateButton() {
+		toggleBtn.classList.toggle("playing", isPlaying);
+		toggleBtn.setAttribute(
+			"aria-label",
+			isPlaying ? "Pause music" : "Play music"
+		);
+	}
+
+	toggleBtn.addEventListener("click", toggleBackgroundMusic);
+	
+	function getTrackTitle(url) {
+		const track = url.split("/").pop();
+		if (nowPlayingLookup.hasOwnProperty(track)) {
+			return nowPlayingLookup[track];
+		}
+		return decodeURIComponent(
+			track.replace(/\.[^/.]+$/, "")
+		);
+	}
+	
+	const nowPlayingEl = document.getElementById("now-playing");
+
+	function updateNowPlaying() {
+		if (!playlist.length || !isPlaying) {
+			return;
+		}
+		const currentUrl = playlist[currentIndex];
+		nowPlayingEl.textContent = "Now Playing: " + getTrackTitle(currentUrl);
+		nowPlayingEl.className = "playing";
+		updateScrolling();
+	}
+	
+	function updateScrolling() {
+		const container = document.getElementById("now-playing-container");
+		const text = document.getElementById("now-playing");
+		text.classList.remove("scrolling");
+		void text.offsetWidth;
+		if (text.scrollWidth > container.clientWidth) {
+			text.classList.add("scrolling");
+		}
+	}
 </script>
