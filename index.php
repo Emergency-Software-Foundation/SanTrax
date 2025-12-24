@@ -7,12 +7,12 @@
 <div>
 	<div style='height: 100%' class='col-sm-9' id='map'></div>
 	<div style='height: 100%' class='col-sm-3'>
-		<div style='height:70%;'>
+		<div style='height:80%;'>
 			<center>
 				<h1>SanTrax</h1><h3>Santa Tracking System</h3><br>
 			</center>
 		</div>
-		<div style='height: 10%; width:100%; bottom: 0;'>
+		<div style='max-height: 5%; width:100%; bottom: 0;'>
 			<hr>
 			<img style='right: 10%; width:15%; float:left;' src='./assets/img/Emergency Software Foundation Logo.png'></img>
 			<center>
@@ -23,7 +23,7 @@
 	</div>
 </div>
 <script>
-	var mymap = L.map('map').setView(new L.LatLng(0, 0), 1);
+	var mymap = L.map('map').setView(new L.LatLng(0, 0), 2);
 	L.control.scale().addTo(mymap);
 	L.tileLayer('https://tiles.stadiamaps.com/tiles/stamen_toner_background/{z}/{x}/{y}{r}.png', {attribution: '&copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://www.stamen.com/" target="_blank">Stamen Design</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(mymap);
 	var markerGroup = L.layerGroup().addTo(mymap);
@@ -33,13 +33,16 @@
 		if ($conn->connect_error) {
 			echo "alert('Failed to Connect to DB')";
 		}
-		$sql = "SELECT * FROM route ORDER BY time ASC";
-		$result = $conn->query($sql);
-		$out = "";
-		if ($result->num_rows > 0) {
-			while($row = $result->fetch_assoc()) {
-				$out .= "[".$row["x"].", ".$row["y"]."],";
+		if (isset($_GET["debug"])) {
+			$sql = "SELECT * FROM route ORDER BY time ASC";
+			$result = $conn->query($sql);
+			$out = "";
+			if ($result->num_rows > 0) {
+				while($row = $result->fetch_assoc()) {
+					$out .= "[".$row["x"].", ".$row["y"]."],";
+				}
 			}
+			echo "	var latlngs = [".$out."];";
 		}
 		$last = "[0,0]";
 		$next = "[0,0]";
@@ -61,8 +64,7 @@
 				$next = $last;
 			}
 		}
-		echo "	var latlngs = [".$out."];";
-		if (isset($_GET["cTime"])) {
+		if (isset($_GET["debug"]) && isset($_GET["cTime"])) {
 			echo "	var curPath = [".$out."];";
 			echo "	var dwell = 5;";
 		} else {
@@ -80,9 +82,9 @@
 		iconSize: [30, 30],
 		iconAnchor: [15, 15]
 	})}).addTo(mymap);
-	var polyline = L.polyline(latlngs, {color: 'transparent'}).addTo(mymap);
+	//var polyline = L.polyline(latlngs, {color: 'transparent'}).addTo(mymap);
 	// zoom the map to the polyline
-	mymap.fitBounds(polyline.getBounds());
+	//mymap.fitBounds(polyline.getBounds());
 	setTimeout(nextPoint, dwell*1000);
 	function nextPoint() {
 		L.motion.polyline([last,queue],  {color: "transparent"}, {auto: true,duration: (dwell*1000),easing: L.Motion.Ease.linear}, {removeOnEnd: true,showMarker: true,icon: L.icon({
