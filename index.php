@@ -11,6 +11,14 @@
 			<center>
 				<h1>SanTrax</h1><h3>Santa Tracking System</h3><br>
 			</center>
+			<div style='outline: 1px solid black;'>
+				<center>
+					<h4><b><u>Estimated Air Speed</u></b></h4>
+					<h3><span id='speed'>
+						<span style='outline: 1px solid black;'>0</span><span style='outline: 1px solid black;'>0</span><span style='outline: 1px solid black;'>0</span><span style='outline: 1px solid black;'>0</span><span style='outline: 1px solid black;'>0</span><span style='outline: 1px solid black;'>0</span>
+					</span> MPH</h3><br/>
+				</center>
+			</div>
 		</div>
 		<div style='max-height: 5%; width:100%; bottom: 0;'>
 			<hr>
@@ -98,6 +106,40 @@
 			let data = JSON.parse(txt);
 			dwell = data["dwell"];
 			queue = data["next"];
+			updateAirSpeed(getAirSpeed(last, queue, dwell));
 		});
+	}
+	function getDistanceFromLatLonInMi(lat1, lon1, lat2, lon2) {
+		const R = 3958.8;
+		const dLat = deg2rad(lat2 - lat1);
+		const dLon = deg2rad(lon2 - lon1);
+		const a =
+			Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+			Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+			Math.sin(dLon / 2) * Math.sin(dLon / 2);
+		const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+		return R * c;
+	}
+	function deg2rad(deg) {
+		return deg * (Math.PI / 180);
+	}
+	function getAirSpeed(last, next, dwell) {
+		if (last[0] == next[0] && last[1] == next[1]) {
+			return "000000";
+		}
+		if (dwell == 0) {
+			return "999999";
+		}
+		const dist = getDistanceFromLatLonInMi(last[0], last[1], next[0], next[1]);
+		const speed = (dist / dwell)*360;
+		if (speed > 999999) {
+			return "999999";
+		}
+		return String(Math.round(speed)).padStart(6, '0');;
+	}
+	function updateAirSpeed(speed) {
+		document.getElementById('speed').innerHTML = speed.split('')
+		  .map(ch => "<span style='outline: 1px solid black;'>"+ch+"</span>")
+		  .join("");
 	}
 </script>
