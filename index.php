@@ -140,10 +140,6 @@
 		minZoom: 1.6,
 		maxBoundsViscosity: 0.5,
 	}).setView(new L.LatLng(0, 0), 1.6);
-	var southWest = L.latLng(-89.98155760646617, -180),
-	northEast = L.latLng(89.99346179538875, 180);
-	var bounds = L.latLngBounds(southWest, northEast);
-	mymap.setMaxBounds(bounds);
 	L.control.scale().addTo(mymap);
 	L.tileLayer('https://tiles.stadiamaps.com/tiles/stamen_toner_background/{z}/{x}/{y}{r}.png', {attribution: '&copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://www.stamen.com/" target="_blank">Stamen Design</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(mymap);
 	var markerGroup = L.layerGroup().addTo(mymap);
@@ -184,7 +180,7 @@
 				$next = $last;
 			}
 		}
-		if (isset($_GET["debug"])) {
+		if (isset($_GET["follow"])) {
 			echo "	var follow = true;";
 		} else {
 			echo "	var follow = false;";	
@@ -202,6 +198,12 @@
 		
 		$conn->close();
 	?>
+	if (!follow) {
+		var southWest = L.latLng(-89.98155760646617, -180),
+		northEast = L.latLng(89.99346179538875, 180);
+		var bounds = L.latLngBounds(southWest, northEast);
+		mymap.setMaxBounds(bounds);
+	}
 	L.motion.polyline(curPath,  {color: "transparent"}, {auto: true,duration: (dwell*1000),easing: L.Motion.Ease.linear}, {removeOnEnd: true,showMarker: true,icon: L.icon({
 		iconUrl: './assets/img/santa.png',
 		iconSize: [30, 30],
@@ -225,7 +227,10 @@
 			dwell = data["dwell"];
 			queue = data["next"];
 			updateAirSpeed(getAirSpeed(last, queue, dwell));
-			
+			if (follow) {
+				let bounds = L.latLngBounds([prevlast, last, queue]);
+				mymap.flyToBounds(bounds, { maxZoom: 4 });
+			}
 		});
 	}
 	function getDistanceFromLatLonInMi(lat1, lon1, lat2, lon2) {
